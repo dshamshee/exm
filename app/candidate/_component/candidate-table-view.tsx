@@ -79,13 +79,6 @@ export function CandidateTableView() {
 
     return (
         <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-1">
-                <h1 className="text-2xl font-bold tracking-tight">Candidates</h1>
-                <p className="text-muted-foreground">
-                    View and manage all registered candidates.
-                </p>
-            </div>
-
             {/* Filters Toolbar */}
             <div className="flex flex-wrap items-center gap-3">
                 {/* Search Roll No Input */}

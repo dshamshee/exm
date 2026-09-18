@@ -11,6 +11,9 @@ import {
 } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { User, PenTool, Ticket, Printer } from "lucide-react"
+import { useReactToPrint } from "react-to-print"
+import HallTicket from "@/components/hall-ticket/HallTicket"
+import type { HallTicketData, CastCategory } from "@/types/hall-ticket"
 
 interface CandidateRowActionsProps {
     candidate: Candidate
@@ -18,6 +21,35 @@ interface CandidateRowActionsProps {
 
 export function CandidateRowActions({ candidate }: CandidateRowActionsProps) {
     const [openDialog, setOpenDialog] = React.useState<"profile" | "signature" | "hallticket" | null>(null)
+    const printRef = React.useRef<HTMLDivElement>(null)
+
+    const handlePrint = useReactToPrint({
+        contentRef: printRef,
+        documentTitle: `HallTicket_${candidate.roll}_${candidate.name.replace(/\s+/g, "_")}`,
+        pageStyle: `
+          @page {
+            size: A4 portrait;
+            margin: 0;
+          }
+          @media print {
+            html, body {
+              margin: 0 !important;
+              padding: 0 !important;
+              height: 100% !important;
+              overflow: hidden !important;
+            }
+            #hall-ticket, .page {
+              page-break-after: avoid !important;
+              break-after: avoid !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              min-height: auto !important;
+              height: auto !important;
+              max-height: 297mm !important;
+            }
+          }
+        `,
+    })
 
     const getInitials = (name: string) => {
         return name
@@ -28,9 +60,37 @@ export function CandidateRowActions({ candidate }: CandidateRowActionsProps) {
             .slice(0, 2)
     }
 
-    const handlePrintHallTicket = () => {
-        window.print()
-    }
+    const hallTicketData: HallTicketData = React.useMemo(() => {
+        return {
+            candidate: {
+                name: candidate.name,
+                roll: candidate.roll,
+                fathers_name: candidate.fathersName ?? "-",
+                category: (candidate.category as CastCategory) ?? "General",
+                dob: candidate.dob ? String(candidate.dob) : "-",
+                gender: "Male",
+                profile: candidate.profile ?? undefined,
+                signature: candidate.signature ?? undefined,
+            },
+            exam: {
+                name: candidate.examName ?? "Examination 2026",
+                post: candidate.examPost ?? "Candidate",
+                date: candidate.examDate ? String(candidate.examDate) : "2026-05-10",
+                time: candidate.examTime ?? "10:00 AM - 01:00 PM",
+                reporting: candidate.examReporting ?? "09:00 AM",
+                center: candidate.examCenter ?? "Main Examination Center",
+            },
+            instructions: [
+                "Candidates must bring this Admit Card along with a valid original Government Photo ID proof (Aadhaar, Passport, PAN Card, Driving License).",
+                "Candidates should reach the examination center at the reporting time. No candidate will be allowed entry after gate closure.",
+                "Electronic devices including mobile phones, smartwatches, calculators, and bluetooth headsets are strictly prohibited inside the examination hall.",
+                "Preserve this Hall Ticket carefully until the entire recruitment/admission process is completed."
+            ],
+            negativeMarking: false,
+            collegeName: "EXAMINATION AUTHORITY & TESTING SERVICE",
+            centerAddress: candidate.examCenter ?? "Main Examination Center Address",
+        }
+    }, [candidate])
 
     return (
         <>
@@ -125,82 +185,18 @@ export function CandidateRowActions({ candidate }: CandidateRowActionsProps) {
 
             {/* 3. Hall Ticket Dialog */}
             <Dialog open={openDialog === "hallticket"} onOpenChange={(open) => !open && setOpenDialog(null)}>
-                <DialogContent className="sm:max-w-xl max-h-[90vh] overflow-y-auto">
-                    <DialogHeader className="flex flex-row items-center justify-between">
+                <DialogContent className="sm:max-w-4xl max-h-[90vh] overflow-y-auto p-6">
+                    <DialogHeader className="flex flex-row items-center justify-between pb-2 border-b">
                         <DialogTitle>Admit Card / Hall Ticket</DialogTitle>
-                        <Button variant="outline" size="sm" onClick={handlePrintHallTicket} className="gap-1">
+                        <Button variant="outline" size="sm" onClick={() => handlePrint()} className="gap-1">
                             <Printer className="h-4 w-4" />
-                            Print
+                            Print / Download
                         </Button>
                     </DialogHeader>
 
-                    {/* Printable Hall Ticket Card Container */}
-                    <div className="border rounded-lg p-5 space-y-4 bg-card text-card-foreground shadow-sm">
-                        {/* Header Banner */}
-                        <div className="text-center border-b pb-3">
-                            <h2 className="text-xl font-bold uppercase tracking-wider text-primary">
-                                {candidate.examName ?? "Examination Admit Card"}
-                            </h2>
-                            {candidate.examPost && (
-                                <p className="text-sm text-muted-foreground font-medium">Post: {candidate.examPost}</p>
-                            )}
-                        </div>
-
-                        {/* Top Info: Candidate Details + Photo */}
-                        <div className="flex flex-col sm:flex-row justify-between gap-4 border-b pb-4">
-                            <div className="space-y-1.5 text-xs sm:text-sm flex-1">
-                                <div><span className="font-semibold text-muted-foreground">Roll Number:</span> <span className="font-bold text-foreground">{candidate.roll}</span></div>
-                                <div><span className="font-semibold text-muted-foreground">Candidate Name:</span> <span className="font-medium">{candidate.name}</span></div>
-                                {candidate.fathersName && (
-                                    <div><span className="font-semibold text-muted-foreground">Father&apos;s Name:</span> {candidate.fathersName}</div>
-                                )}
-                                <div><span className="font-semibold text-muted-foreground">DOB:</span> {candidate.dob ? String(candidate.dob) : "N/A"}</div>
-                                <div><span className="font-semibold text-muted-foreground">Category:</span> {candidate.category ?? "N/A"}</div>
-                                <div><span className="font-semibold text-muted-foreground">Phone:</span> {candidate.phone}</div>
-                            </div>
-                            <div className="flex flex-col items-center justify-center shrink-0">
-                                <Avatar className="h-24 w-20 rounded-md border">
-                                    <AvatarImage src={candidate.profile ?? undefined} alt={candidate.name} className="object-cover" />
-                                    <AvatarFallback className="rounded-md bg-muted text-xs">
-                                        {getInitials(candidate.name)}
-                                    </AvatarFallback>
-                                </Avatar>
-                                <span className="text-[10px] text-muted-foreground mt-1">Photo</span>
-                            </div>
-                        </div>
-
-                        {/* Exam Schedule & Center Details */}
-                        <div className="space-y-2 text-xs sm:text-sm border-b pb-4">
-                            <h4 className="font-semibold text-primary uppercase text-xs tracking-wider">Exam Details</h4>
-                            <div className="grid grid-cols-2 gap-2 bg-muted/40 p-3 rounded-md">
-                                <div><span className="font-semibold text-muted-foreground">Exam Date:</span> {candidate.examDate ? String(candidate.examDate) : "TBA"}</div>
-                                <div><span className="font-semibold text-muted-foreground">Exam Time:</span> {candidate.examTime ?? "TBA"}</div>
-                                <div><span className="font-semibold text-muted-foreground">Reporting Time:</span> {candidate.examReporting ?? "TBA"}</div>
-                                <div><span className="font-semibold text-muted-foreground">Status:</span> {candidate.eligiblity ?? "ELIGIBLE"}</div>
-                            </div>
-                            <div className="pt-1">
-                                <span className="font-semibold text-muted-foreground">Exam Center:</span>
-                                <p className="text-xs mt-0.5">{candidate.examCenter ?? "Details will be notified on center allotment."}</p>
-                            </div>
-                        </div>
-
-                        {/* Bottom: Candidate Signature */}
-                        <div className="flex justify-between items-end pt-2">
-                            <div className="text-[10px] text-muted-foreground space-y-1">
-                                <p>* Please bring this admit card along with a valid ID proof to the exam center.</p>
-                                <p>* Arrive at the reporting time specified above.</p>
-                            </div>
-                            <div className="flex flex-col items-center shrink-0">
-                                <div className="h-12 w-28 border flex items-center justify-center bg-white p-1 rounded">
-                                    {candidate.signature ? (
-                                        <img src={candidate.signature} alt="Signature" className="max-h-full max-w-full object-contain" />
-                                    ) : (
-                                        <span className="text-[10px] text-muted-foreground">No Signature</span>
-                                    )}
-                                </div>
-                                <span className="text-[10px] text-muted-foreground mt-1">Candidate Signature</span>
-                            </div>
-                        </div>
+                    {/* Render exact HallTicket component with candidate data */}
+                    <div ref={printRef} className="pt-2">
+                        <HallTicket data={hallTicketData} />
                     </div>
                 </DialogContent>
             </Dialog>

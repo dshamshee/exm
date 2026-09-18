@@ -296,15 +296,29 @@
 
 /* ── Print Styles ── */
 @media print {
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 100% !important;
+    overflow: hidden !important;
+  }
+
   .page {
-    margin: 0;
-    padding: 10mm 12mm;
-    box-shadow: none;
-    border: none;
+    margin: 0 auto !important;
+    padding: 8mm 12mm !important;
+    min-height: auto !important;
+    height: auto !important;
+    max-height: 297mm !important;
+    box-shadow: none !important;
+    border: none !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
   }
 
   @page {
-    size: A4;
+    size: A4 portrait;
     margin: 0;
   }
 }

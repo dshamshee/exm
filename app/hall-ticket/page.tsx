@@ -1,10 +1,7 @@
+import { ContentLayout } from "@/components/admin-panel/content-layout";
 import type { HallTicketData } from "@/types/hall-ticket";
 import HallTicket from "@/components/hall-ticket/HallTicket";
 
-/**
- * Temporary mock candidate data for testing the hall ticket template.
- * Fields derived from candidateTable & examDetailsTable schemas.
- */
 const mockHallTicketData: HallTicketData = {
   collegeName: "SANT SANDHYA DAS MAHILA COLLEGE",
   centerAddress: "Barh, Patna",
@@ -23,7 +20,7 @@ const mockHallTicketData: HallTicketData = {
     category: "SC",
     dob: "13-05-1963",
     gender: "Male",
-    profile: undefined, // No photo for testing — shows placeholder
+    profile: undefined,
     signature: undefined,
   },
   exam: {
@@ -38,8 +35,10 @@ const mockHallTicketData: HallTicketData = {
 
 export default function HallTicketPreview() {
   return (
-    <div style={{ background: "#e8e8e8", minHeight: "100vh", padding: "20px 0" }}>
-      <HallTicket data={mockHallTicketData} />
-    </div>
+    <ContentLayout title="Hall Ticket">
+      <div className="flex justify-center">
+        <HallTicket data={mockHallTicketData} />
+      </div>
+    </ContentLayout>
   );
 }

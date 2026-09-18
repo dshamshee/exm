@@ -1,9 +1,10 @@
-import { CandidateTableView } from "./_component/candidate-table-view"
+import { ContentLayout } from "@/components/admin-panel/content-layout";
+import { CandidateTableView } from "./_component/candidate-table-view";
 
 export default function CandidatePage() {
-    return (
-        <div className="container mx-auto py-10">
-            <CandidateTableView />
-        </div>
-    )
+  return (
+    <ContentLayout title="Candidates">
+      <CandidateTableView />
+    </ContentLayout>
+  );
 }
