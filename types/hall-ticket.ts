@@ -25,7 +25,7 @@ export type ExamDetails = {
 
 export type CandidateData = {
   name: string;
-  roll: number;
+  roll: string;
   fathers_name: string;
   category: CastCategory;
   dob: string;

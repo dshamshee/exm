@@ -22,6 +22,7 @@ export function CandidateTableView() {
 
     const [rollSearch, setRollSearch] = React.useState("")
     const [selectedExam, setSelectedExam] = React.useState<string>("ALL")
+    const [selectedPost, setSelectedPost] = React.useState<string>("ALL")
 
     // Derive list of unique available exams (combining DB exams and candidate records)
     const availableExams = React.useMemo(() => {
@@ -39,21 +40,33 @@ export function CandidateTableView() {
         return Array.from(map.values())
     }, [examsData, candidates])
 
+    // Derive unique exam posts from candidate records
+    const availablePosts = React.useMemo(() => {
+        if (!candidates) return []
+        const set = new Set<string>()
+        candidates.forEach((c) => {
+            if (c.examPost) set.add(c.examPost)
+        })
+        return Array.from(set)
+    }, [candidates])
+
     // Filter candidates based on Roll No search and Exam selection
     const filteredCandidates = React.useMemo(() => {
         if (!candidates) return []
         return candidates.filter((candidate) => {
             const matchesRoll = !rollSearch.trim() || candidate.roll.toString().includes(rollSearch.trim())
             const matchesExam = selectedExam === "ALL" || candidate.examName === selectedExam
-            return matchesRoll && matchesExam
+            const matchesPost = selectedPost === "ALL" || candidate.examPost === selectedPost
+            return matchesRoll && matchesExam && matchesPost
         })
-    }, [candidates, rollSearch, selectedExam])
+    }, [candidates, rollSearch, selectedExam, selectedPost])
 
-    const hasActiveFilters = rollSearch.trim() !== "" || selectedExam !== "ALL"
+    const hasActiveFilters = rollSearch.trim() !== "" || selectedExam !== "ALL" || selectedPost !== "ALL"
 
     const handleResetFilters = () => {
         setRollSearch("")
         setSelectedExam("ALL")
+        setSelectedPost("ALL")
     }
 
     if (isCandidatesLoading) {
@@ -104,6 +117,23 @@ export function CandidateTableView() {
                             {availableExams.map((examName) => (
                                 <SelectItem key={examName} value={examName}>
                                     {examName}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Exam Post Filter */}
+                <div className="w-full sm:w-56">
+                    <Select value={selectedPost} onValueChange={(val) => setSelectedPost(val ?? "ALL")}>
+                        <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Select Post" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="ALL">All Posts</SelectItem>
+                            {availablePosts.map((post) => (
+                                <SelectItem key={post} value={post}>
+                                    {post}
                                 </SelectItem>
                             ))}
                         </SelectContent>

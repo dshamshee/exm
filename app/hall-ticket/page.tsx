@@ -15,7 +15,7 @@ const mockHallTicketData: HallTicketData = {
   ],
   candidate: {
     name: "Aditya Singh Suman",
-    roll: 101,
+    roll: "101",
     fathers_name: "Asdg hhjjjj",
     category: "SC",
     dob: "13-05-1963",

@@ -5,17 +5,19 @@ import { createId } from "@paralleldrive/cuid2";
 
 export const cast_category = pgEnum('cast_category', ['General', 'EBC', 'BC', 'SC', 'ST'])
 export const eligiblity_status = pgEnum('eligiblity_status', ['ELIGIBLE', 'NOT_ELIGIBLE'])
+export const gender_status = pgEnum('gender_status', ['MALE', 'FEMALE', 'OTHER'])
 export const candidateTable = pgTable('candidate', {
     id: text().primaryKey().$defaultFn(() => createId()),
     exam_id: text("exam_id").references(() => examDetailsTable.id),
     name: text().notNull(),
-    roll: integer().unique().notNull(),
-    fathers_name: text().notNull(),
-    address: text().notNull(),
-    phone: text().notNull(),
-    category: cast_category().notNull(),
-    email: text().unique().notNull(),
-    dob: date().notNull(),
+    roll: text().unique().notNull(),
+    fathers_name: text(),
+    address: text(),
+    phone: text(),
+    category: cast_category(),
+    email: text(),
+    dob: date(),
+    gender: gender_status(),
     eligiblity: eligiblity_status(),
     signature: text(),
     profile: text(),

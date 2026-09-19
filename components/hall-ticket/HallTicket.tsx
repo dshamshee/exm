@@ -1,3 +1,5 @@
+"use client";
+
 import Image from "next/image";
 import type { HallTicketData } from "@/types/hall-ticket";
 import styles from "./HallTicket.module.css";
@@ -14,6 +16,7 @@ export default function HallTicket({ data }: HallTicketProps) {
       {/* ── Header ── */}
       <header className={styles.header}>
         <h1 className={styles.collegeName}>{collegeName}</h1>
+        <p className='font-bold text-lg '>BARH, PATNA</p>
         <h2 className={styles.hallTicketTitle}>Hall Ticket / Admit Card</h2>
         <p className={styles.examTitle}>
           {exam.name} - {exam.date.split("-").pop()}
@@ -48,7 +51,7 @@ export default function HallTicket({ data }: HallTicketProps) {
 
             <div className={styles.fieldLabel}>Father / Guardian</div>
             <div className={styles.fieldValue}>
-              S/O / D/O : {candidate.fathers_name}
+            {candidate.fathers_name}
             </div>
 
             <div className={styles.fieldLabel}>Category</div>
@@ -71,6 +74,7 @@ export default function HallTicket({ data }: HallTicketProps) {
                   width={100}
                   height={120}
                   className={styles.photo}
+                  unoptimized
                 />
               ) : (
                 <div className={styles.photoPlaceholder}>
@@ -81,9 +85,12 @@ export default function HallTicket({ data }: HallTicketProps) {
             <div className={styles.candidateSignature}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={candidate.signature || "/authorisedSignature.jpg"}
+                src={candidate.signature || ""}
                 alt="Candidate Signature"
                 className={styles.candidateSignatureImg}
+                onError={(e) => {
+                  e.currentTarget.src = "";
+                }}
               />
               <span className={styles.candidateSignatureLabel}>Candidate Signature</span>
             </div>
@@ -108,7 +115,6 @@ export default function HallTicket({ data }: HallTicketProps) {
               <td><strong>{exam.time}</strong></td>
               <td>
                 <div className={styles.centreName}>{exam.center}</div>
-                <div className={styles.centreAddress}>{centerAddress}</div>
               </td>
             </tr>
           </tbody>
@@ -143,7 +149,7 @@ export default function HallTicket({ data }: HallTicketProps) {
         <div className={styles.signatureBlock}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/authorisedSignature.jpg"
+            src="/authorisedSignature.png"
             alt="Authorised Signature"
             className={styles.signatureImage}
           />

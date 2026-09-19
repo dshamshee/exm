@@ -17,6 +17,7 @@ export async function getCandidateAction() {
         fathersName: candidateTable.fathers_name,
         address: candidateTable.address,
         dob: candidateTable.dob,
+        gender: candidateTable.gender,
         eligiblity: candidateTable.eligiblity,
         profile: candidateTable.profile,
         signature: candidateTable.signature,

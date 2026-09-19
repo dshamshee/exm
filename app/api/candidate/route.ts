@@ -15,13 +15,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const required = ["name", "roll", "fathers_name", "address", "phone", "category", "email", "dob"];
+    const required = ["name", "roll"];
 
     // Validate each item
     for (let i = 0; i < items.length; i++) {
       const item = items[i];
       for (const field of required) {
-        if (item[field] === undefined || item[field] === null) {
+        if (item[field] === undefined || item[field] === null || item[field] === "") {
           return NextResponse.json(
             { success: false, error: `Missing required field '${field}' at index ${i}` },
             { status: 400 }
@@ -29,8 +29,8 @@ export async function POST(request: Request) {
         }
       }
 
-      // Validate date format (YYYY-MM-DD)
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(item.dob)) {
+      // Validate date format (YYYY-MM-DD) only when dob is provided
+      if (item.dob && !/^\d{4}-\d{2}-\d{2}$/.test(item.dob)) {
         return NextResponse.json(
           { success: false, error: `Invalid dob format at index ${i}. Use YYYY-MM-DD` },
           { status: 400 }
@@ -39,18 +39,19 @@ export async function POST(request: Request) {
     }
 
     const recordsToInsert = items.map((item) => ({
-      exam_id: item.exam_id ?? null,
+      exam_id: item.exam_id || null,
       name: item.name,
       roll: item.roll,
-      fathers_name: item.fathers_name,
-      address: item.address,
-      phone: item.phone,
-      category: item.category,
-      email: item.email,
-      dob: item.dob,
-      eligiblity: item.eligiblity ?? null,
-      signature: item.signature ?? null,
-      profile: item.profile ?? null,
+      fathers_name: item.fathers_name || null,
+      address: item.address || null,
+      phone: item.phone || null,
+      category: item.category || null,
+      email: item.email || null,       // null for unique key when empty
+      dob: item.dob || null,
+      gender: item.gender || null,
+      eligiblity: item.eligiblity || null,
+      signature: item.signature || null,
+      profile: item.profile || null,
     }));
 
     const inserted = await db

@@ -10,8 +10,9 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { User, PenTool, Ticket, Printer } from "lucide-react"
+import { User, PenTool, Ticket, Printer, Upload, Loader2, Check } from "lucide-react"
 import { useReactToPrint } from "react-to-print"
+import { useQueryClient } from "@tanstack/react-query"
 import HallTicket from "@/components/hall-ticket/HallTicket"
 import type { HallTicketData, CastCategory } from "@/types/hall-ticket"
 
@@ -21,11 +22,17 @@ interface CandidateRowActionsProps {
 
 export function CandidateRowActions({ candidate }: CandidateRowActionsProps) {
     const [openDialog, setOpenDialog] = React.useState<"profile" | "signature" | "hallticket" | null>(null)
+    const [uploadState, setUploadState] = React.useState<"idle" | "uploading" | "success" | "error">("idle")
+    const [uploadError, setUploadError] = React.useState<string | null>(null)
+    const profileInputRef = React.useRef<HTMLInputElement>(null)
+    const signatureInputRef = React.useRef<HTMLInputElement>(null)
     const printRef = React.useRef<HTMLDivElement>(null)
+    const queryClient = useQueryClient()
 
     const handlePrint = useReactToPrint({
         contentRef: printRef,
         documentTitle: `HallTicket_${candidate.roll}_${candidate.name.replace(/\s+/g, "_")}`,
+        suppressErrors: true,
         pageStyle: `
           @page {
             size: A4 portrait;
@@ -60,6 +67,69 @@ export function CandidateRowActions({ candidate }: CandidateRowActionsProps) {
             .slice(0, 2)
     }
 
+    /**
+     * Upload a file (profile or signature) to the candidate upload API.
+     * Shows loading state, invalidates query cache on success.
+     */
+    async function handleFileUpload(file: File, type: "profile" | "signature") {
+        setUploadState("uploading")
+        setUploadError(null)
+
+        try {
+            const formData = new FormData()
+            formData.append("candidateId", candidate.id)
+            formData.append(type, file)
+
+            const res = await fetch("/api/candidate/upload", {
+                method: "PATCH",
+                body: formData,
+            })
+
+            const json = await res.json()
+
+            if (!res.ok || !json.success) {
+                throw new Error(json.error ?? "Upload failed")
+            }
+
+            setUploadState("success")
+            // Refresh candidate data so the new image shows immediately
+            await queryClient.invalidateQueries({ queryKey: ["get-candidate"] })
+
+            // Reset success state after 2 seconds
+            setTimeout(() => setUploadState("idle"), 2000)
+        } catch (err) {
+            const message = err instanceof Error ? err.message : "Upload failed"
+            setUploadError(message)
+            setUploadState("error")
+            // Reset error state after 3 seconds
+            setTimeout(() => {
+                setUploadState("idle")
+                setUploadError(null)
+            }, 3000)
+        }
+    }
+
+    function onProfileFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0]
+        if (file) handleFileUpload(file, "profile")
+        // Reset input so re-selecting the same file triggers change
+        e.target.value = ""
+    }
+
+    function onSignatureFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+        const file = e.target.files?.[0]
+        if (file) handleFileUpload(file, "signature")
+        e.target.value = ""
+    }
+
+    // Reset upload state when dialog closes
+    React.useEffect(() => {
+        if (openDialog === null) {
+            setUploadState("idle")
+            setUploadError(null)
+        }
+    }, [openDialog])
+
     const hallTicketData: HallTicketData = React.useMemo(() => {
         return {
             candidate: {
@@ -68,7 +138,7 @@ export function CandidateRowActions({ candidate }: CandidateRowActionsProps) {
                 fathers_name: candidate.fathersName ?? "-",
                 category: (candidate.category as CastCategory) ?? "General",
                 dob: candidate.dob ? String(candidate.dob) : "-",
-                gender: "Male",
+                gender: candidate.gender ?? "MALE",
                 profile: candidate.profile ?? undefined,
                 signature: candidate.signature ?? undefined,
             },
@@ -87,13 +157,29 @@ export function CandidateRowActions({ candidate }: CandidateRowActionsProps) {
                 "Preserve this Hall Ticket carefully until the entire recruitment/admission process is completed."
             ],
             negativeMarking: false,
-            collegeName: "EXAMINATION AUTHORITY & TESTING SERVICE",
+            collegeName: "SANT SANDHYA DAS MAHILA COLLEGE",
             centerAddress: candidate.examCenter ?? "Main Examination Center Address",
         }
     }, [candidate])
 
     return (
         <>
+            {/* Hidden file inputs */}
+            <input
+                ref={profileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={onProfileFileChange}
+            />
+            <input
+                ref={signatureInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={onSignatureFileChange}
+            />
+
             {/* 3 Direct Action Buttons */}
             <div className="flex items-center gap-1.5 whitespace-nowrap">
                 <Button
@@ -150,6 +236,24 @@ export function CandidateRowActions({ candidate }: CandidateRowActionsProps) {
                             <div><span className="font-semibold text-muted-foreground">Email:</span> {candidate.email ?? "N/A"}</div>
                             <div><span className="font-semibold text-muted-foreground">DOB:</span> {candidate.dob ? String(candidate.dob) : "N/A"}</div>
                         </div>
+
+                        {/* Upload button */}
+                        <Button
+                            onClick={() => profileInputRef.current?.click()}
+                            disabled={uploadState === "uploading"}
+                            className="w-full gap-2"
+                        >
+                            {uploadState === "uploading" && <Loader2 className="h-4 w-4 animate-spin" />}
+                            {uploadState === "success" && <Check className="h-4 w-4" />}
+                            {uploadState === "idle" && <Upload className="h-4 w-4" />}
+                            {uploadState === "error" && <Upload className="h-4 w-4" />}
+                            {uploadState === "uploading" ? "Uploading..." :
+                                uploadState === "success" ? "Uploaded!" :
+                                    candidate.profile ? "Change Profile Photo" : "Upload Profile Photo"}
+                        </Button>
+                        {uploadState === "error" && uploadError && (
+                            <p className="text-xs text-destructive text-center">{uploadError}</p>
+                        )}
                     </div>
                 </DialogContent>
             </Dialog>
@@ -179,6 +283,24 @@ export function CandidateRowActions({ candidate }: CandidateRowActionsProps) {
                             <h3 className="text-sm font-semibold">{candidate.name}</h3>
                             <p className="text-xs text-muted-foreground">Roll No: {candidate.roll}</p>
                         </div>
+
+                        {/* Upload button */}
+                        <Button
+                            onClick={() => signatureInputRef.current?.click()}
+                            disabled={uploadState === "uploading"}
+                            className="w-full gap-2"
+                        >
+                            {uploadState === "uploading" && <Loader2 className="h-4 w-4 animate-spin" />}
+                            {uploadState === "success" && <Check className="h-4 w-4" />}
+                            {uploadState === "idle" && <Upload className="h-4 w-4" />}
+                            {uploadState === "error" && <Upload className="h-4 w-4" />}
+                            {uploadState === "uploading" ? "Uploading..." :
+                                uploadState === "success" ? "Uploaded!" :
+                                    candidate.signature ? "Change Signature" : "Upload Signature"}
+                        </Button>
+                        {uploadState === "error" && uploadError && (
+                            <p className="text-xs text-destructive text-center">{uploadError}</p>
+                        )}
                     </div>
                 </DialogContent>
             </Dialog>
