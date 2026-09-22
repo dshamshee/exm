@@ -9,23 +9,30 @@ import {
   Card,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
 import { useVerifyCandidateMutation } from "@/app/(public)/verify/query/verify";
+import { useRecordCandidateDownloadMutation } from "@/app/(public)/verify/query/download";
+import { SupportDialog } from "@/app/(public)/verify/_components/support-dialog";
 import HallTicket from "@/components/hall-ticket/HallTicket";
 import type { HallTicketData, CastCategory } from "@/types/hall-ticket";
-import { Printer, RotateCcw, Search, GraduationCap } from "lucide-react";
+import { Printer, RotateCcw, Search, GraduationCap, LifeBuoy, AlertCircle } from "lucide-react";
 
 export default function VerifyPage() {
   const [name, setName] = useState("");
   const [fathersName, setFathersName] = useState("");
   const [dob, setDob] = useState("");
   const [hallTicketData, setHallTicketData] = useState<HallTicketData | null>(null);
+  const [candidateId, setCandidateId] = useState<string | null>(null);
+  const [downloadCount, setDownloadCount] = useState<number | null>(null);
+  const [supportDialogOpen, setSupportDialogOpen] = useState(false);
 
   const hallTicketRef = useRef<HTMLDivElement>(null);
 
   const { mutate, isPending, error, isError, reset } = useVerifyCandidateMutation();
+  const { mutate: recordDownload } = useRecordCandidateDownloadMutation();
 
   const [serverError, setServerError] = useState<string | null>(null);
 
@@ -33,6 +40,22 @@ export default function VerifyPage() {
     contentRef: hallTicketRef,
     documentTitle: `HallTicket_${hallTicketData?.candidate.name ?? "candidate"}`,
   });
+
+  function onPrintClick() {
+    if (candidateId) {
+      recordDownload(
+        { candidateId },
+        {
+          onSuccess: (res) => {
+            if (res.success && res.data) {
+              setDownloadCount(res.data.downloadCount ?? 1);
+            }
+          },
+        }
+      );
+    }
+    handlePrint();
+  }
 
   function handleVerify(e: React.FormEvent) {
     e.preventDefault();
@@ -48,6 +71,8 @@ export default function VerifyPage() {
           }
 
           const d = res.data;
+          setCandidateId(d.id);
+          setDownloadCount(d.downloadCount ?? 0);
 
           const data: HallTicketData = {
             collegeName: "SANT SANDHYA DAS MAHILA COLLEGE",
@@ -88,6 +113,8 @@ export default function VerifyPage() {
 
   function handleReset() {
     setHallTicketData(null);
+    setCandidateId(null);
+    setDownloadCount(null);
     setServerError(null);
     setName("");
     setFathersName("");
@@ -100,15 +127,32 @@ export default function VerifyPage() {
     return (
       <div className="flex flex-col items-center py-8 px-4 gap-6">
         {/* Action bar */}
-        <div className="flex gap-3 print:hidden">
-          <Button onClick={() => handlePrint()} size="lg" className="gap-2">
+        <div className="flex flex-wrap items-center justify-center gap-3 print:hidden">
+          <Button onClick={onPrintClick} size="lg" className="gap-2">
             <Printer className="h-4 w-4" />
             Print Hall Ticket
           </Button>
+
           <Button onClick={handleReset} variant="outline" size="lg" className="gap-2">
             <RotateCcw className="h-4 w-4" />
             Verify Another
           </Button>
+
+          <SupportDialog
+            initialValues={{ name, fathersName, dob }}
+            trigger={
+              <Button variant="secondary" size="lg" className="gap-2">
+                <LifeBuoy className="h-4 w-4" />
+                Report an Issue
+              </Button>
+            }
+          />
+
+          {downloadCount !== null && downloadCount > 0 && (
+            <span className="text-xs text-muted-foreground w-full text-center">
+              Downloaded: {downloadCount} {downloadCount === 1 ? "time" : "times"}
+            </span>
+          )}
         </div>
 
         {/* Hall Ticket */}
@@ -121,8 +165,8 @@ export default function VerifyPage() {
 
   // Verification Form state
   return (
-    <div className="flex items-center justify-center min-h-screen px-4 py-12">
-      <Card className="w-full max-w-md">
+    <div className="flex flex-col items-center justify-center min-h-screen px-4 py-12">
+      <Card className="w-full max-w-md shadow-sm">
         <CardHeader className="text-center space-y-3">
           <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary/10">
             <GraduationCap className="h-7 w-7 text-primary" />
@@ -173,10 +217,22 @@ export default function VerifyPage() {
               />
             </div>
 
-            {/* Error display */}
+            {/* Error display with direct support link */}
             {(serverError || isError) && (
-              <div className="rounded-md bg-destructive/10 border border-destructive/20 px-4 py-3 text-sm text-destructive">
-                {serverError || error?.message || "Something went wrong. Please try again."}
+              <div className="rounded-lg bg-destructive/10 border border-destructive/20 p-3 space-y-2 text-sm text-destructive">
+                <div className="flex items-start gap-2">
+                  <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+                  <span>{serverError || error?.message || "Something went wrong. Please try again."}</span>
+                </div>
+                <div className="pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setSupportDialogOpen(true)}
+                    className="text-xs font-medium underline underline-offset-4 hover:opacity-80 flex items-center gap-1 text-destructive"
+                  >
+                    Cannot find your admit card? Contact Customer Support →
+                  </button>
+                </div>
               </div>
             )}
 
@@ -192,7 +248,28 @@ export default function VerifyPage() {
             </Button>
           </form>
         </CardContent>
+
+        <CardFooter className="flex flex-col items-center border-t pt-4 text-xs text-muted-foreground gap-2">
+          <div className="flex items-center gap-1.5">
+            <span>Having trouble with your hall ticket?</span>
+            <button
+              type="button"
+              onClick={() => setSupportDialogOpen(true)}
+              className="text-primary font-medium hover:underline inline-flex items-center gap-1"
+            >
+              <LifeBuoy className="h-3.5 w-3.5" />
+              Contact Support
+            </button>
+          </div>
+        </CardFooter>
       </Card>
+
+      {/* Controlled Support Dialog */}
+      <SupportDialog
+        open={supportDialogOpen}
+        onOpenChange={setSupportDialogOpen}
+        initialValues={{ name, fathersName, dob }}
+      />
     </div>
   );
 }

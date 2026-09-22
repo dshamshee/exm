@@ -22,6 +22,8 @@ export async function getCandidateAction() {
         profile: candidateTable.profile,
         signature: candidateTable.signature,
         examId: candidateTable.exam_id,
+        downloadCount: candidateTable.download_count,
+        downloadAt: candidateTable.download_at,
         examName: examDetailsTable.name,
         examPost: examDetailsTable.post,
         examDate: examDetailsTable.date,

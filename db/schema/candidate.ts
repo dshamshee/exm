@@ -21,6 +21,8 @@ export const candidateTable = pgTable('candidate', {
     eligiblity: eligiblity_status(),
     signature: text(),
     profile: text(),
+    download_count: integer().default(0),
+    download_at: timestamp("download_at", { mode: "date", withTimezone: true }),
     created_at: timestamp("created_at", { mode: "date", withTimezone: true }).default(sql`NOW()`).notNull(),
     updated_at: timestamp("updated_at", { mode: "date", withTimezone: true }).default(sql`NOW()`).notNull(),
 })
