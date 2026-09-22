@@ -3,7 +3,6 @@ import "./globals.css";
 import { cn } from "@/lib/utils";
 import QueryProvider from "@/components/provider";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import AdminPanelLayout from "@/components/admin-panel/admin-panel-layout";
 
 export const metadata: Metadata = {
   title: "Exam Management Portal",
@@ -23,9 +22,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <QueryProvider>
           <TooltipProvider>
-            <AdminPanelLayout>
-              {children}
-            </AdminPanelLayout>
+            {children}
           </TooltipProvider>
         </QueryProvider>
       </body>

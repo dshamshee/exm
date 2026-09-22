@@ -1,5 +1,5 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
-import { getExamAction } from "@/app/exam/lib/action";
+import { getExamAction } from "@/app/(admin)/exam/lib/action";
 
 export function getExamQuery() {
   return queryOptions({

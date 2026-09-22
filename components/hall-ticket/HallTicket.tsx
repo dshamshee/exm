@@ -47,11 +47,11 @@ export default function HallTicket({ data }: HallTicketProps) {
         <div className={styles.candidateSection}>
           <div className={styles.candidateFields}>
             <div className={styles.fieldLabel}>Candidate Name</div>
-            <div className={styles.fieldValue}>{candidate.name}</div>
+            <div className={styles.fieldValue}>{candidate.name.toUpperCase()}</div>
 
             <div className={styles.fieldLabel}>Father / Guardian</div>
             <div className={styles.fieldValue}>
-            {candidate.fathers_name}
+            {candidate.fathers_name.toUpperCase()}
             </div>
 
             <div className={styles.fieldLabel}>Category</div>

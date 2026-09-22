@@ -1,5 +1,5 @@
 import { queryOptions, useQuery } from "@tanstack/react-query";
-import { getCandidateAction, getExamsAction } from "@/app/candidate/lib/action";
+import { getCandidateAction, getExamsAction } from "@/app/(admin)/candidate/lib/action";
 
 export function getCandidateQuery() {
   return queryOptions({
