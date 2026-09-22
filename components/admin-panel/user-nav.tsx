@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { LayoutGrid, LogOut, User } from "lucide-react";
+import { logoutAction } from "@/app/(public)/login/lib/action";
 
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -22,6 +24,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 export function UserNav() {
+  const router = useRouter();
+
+  async function handleLogout() {
+    await logoutAction();
+    router.push("/login");
+    router.refresh();
+  }
+
   return (
     <DropdownMenu>
       <TooltipProvider delay={100}>
@@ -37,9 +47,9 @@ export function UserNav() {
       <DropdownMenuContent className="w-56" align="end">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">John Doe</p>
+            <p className="text-sm font-medium leading-none">Admin</p>
             <p className="text-xs leading-none text-muted-foreground">
-              johndoe@example.com
+              Exam Management Portal
             </p>
           </div>
         </DropdownMenuLabel>
@@ -51,7 +61,7 @@ export function UserNav() {
                               </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem className="hover:cursor-pointer" onClick={() => {}}>
+        <DropdownMenuItem className="hover:cursor-pointer" onClick={handleLogout}>
           <LogOut className="w-4 h-4 mr-3 text-muted-foreground" />
           Sign out
         </DropdownMenuItem>
