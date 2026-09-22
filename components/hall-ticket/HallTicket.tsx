@@ -19,7 +19,7 @@ export default function HallTicket({ data }: HallTicketProps) {
         <p className='font-bold text-lg '>BARH, PATNA</p>
         <h2 className={styles.hallTicketTitle}>Hall Ticket / Admit Card</h2>
         <p className={styles.examTitle}>
-          {exam.name} - {exam.date.split("-").pop()}
+          {exam.name} 
         </p>
       </header>
 
