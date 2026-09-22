@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Routes that don't require admin auth
-const PUBLIC_PATHS = ["/verify", "/login", "/api"];
+// Routes that require admin authentication
+const ADMIN_PATHS = ["/candidate", "/exam", "/hall-ticket", "/admin-testing"];
 
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -12,22 +12,24 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL("/verify", request.url));
   }
 
-  // Allow public routes
-  if (PUBLIC_PATHS.some((path) => pathname.startsWith(path))) {
+  // Allow static assets, images, and Next.js internals
+  if (
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon") ||
+    /\.(?:png|jpg|jpeg|gif|svg|webp|ico|css|js)$/i.test(pathname)
+  ) {
     return NextResponse.next();
   }
 
-  // Allow static assets and Next.js internals
-  if (pathname.startsWith("/_next") || pathname.startsWith("/favicon")) {
-    return NextResponse.next();
-  }
+  // Check if route requires admin auth
+  const isAdminRoute = ADMIN_PATHS.some((path) => pathname.startsWith(path));
 
-  // Check for admin session cookie
-  const session = request.cookies.get("admin_session")?.value;
-
-  if (session !== "authenticated") {
-    const loginUrl = new URL("/login", request.url);
-    return NextResponse.redirect(loginUrl);
+  if (isAdminRoute) {
+    const session = request.cookies.get("admin_session")?.value;
+    if (session !== "authenticated") {
+      const loginUrl = new URL("/login", request.url);
+      return NextResponse.redirect(loginUrl);
+    }
   }
 
   return NextResponse.next();
