@@ -14,16 +14,25 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { useVerifyCandidateMutation } from "@/app/(public)/verify/query/verify";
+import { useGetPostsQuery } from "@/app/(public)/verify/query/get";
 import { useRecordCandidateDownloadMutation } from "@/app/(public)/verify/query/download";
 import { SupportDialog } from "@/app/(public)/verify/_components/support-dialog";
 import HallTicket from "@/components/hall-ticket/HallTicket";
 import type { HallTicketData, CastCategory } from "@/types/hall-ticket";
 import { Printer, RotateCcw, Search, GraduationCap, LifeBuoy, AlertCircle } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function VerifyPage() {
   const [name, setName] = useState("");
   const [fathersName, setFathersName] = useState("");
   const [dob, setDob] = useState("");
+  const [post, setPost] = useState("");
   const [hallTicketData, setHallTicketData] = useState<HallTicketData | null>(null);
   const [candidateId, setCandidateId] = useState<string | null>(null);
   const [downloadCount, setDownloadCount] = useState<number | null>(null);
@@ -31,6 +40,7 @@ export default function VerifyPage() {
 
   const hallTicketRef = useRef<HTMLDivElement>(null);
 
+  const { data: availablePosts, isLoading: isPostsLoading } = useGetPostsQuery();
   const { mutate, isPending, error, isError, reset } = useVerifyCandidateMutation();
   const { mutate: recordDownload } = useRecordCandidateDownloadMutation();
 
@@ -61,8 +71,13 @@ export default function VerifyPage() {
     e.preventDefault();
     setServerError(null);
 
+    if (!post || !post.trim()) {
+      setServerError("Please select a post to verify");
+      return;
+    }
+
     mutate(
-      { name, fathersName, dob },
+      { name, fathersName, dob, post },
       {
         onSuccess: (res) => {
           if (!res.success) {
@@ -119,6 +134,7 @@ export default function VerifyPage() {
     setName("");
     setFathersName("");
     setDob("");
+    setPost("");
     reset();
   }
 
@@ -182,7 +198,33 @@ export default function VerifyPage() {
         <CardContent>
           <form onSubmit={handleVerify} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
+              <Label htmlFor="post">
+                Select Post <span className="text-destructive">*</span>
+              </Label>
+              <Select value={post} onValueChange={(val) => setPost(val ?? "")}>
+                <SelectTrigger id="post" className="w-full">
+                  <SelectValue placeholder="Select your post" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availablePosts && availablePosts.length > 0 ? (
+                    availablePosts.map((p) => (
+                      <SelectItem key={p} value={p}>
+                        {p}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <SelectItem value="NO_POSTS" disabled>
+                      {isPostsLoading ? "Loading available posts..." : "No posts available"}
+                    </SelectItem>
+                  )}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="name">
+                Full Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="name"
                 type="text"
@@ -195,7 +237,9 @@ export default function VerifyPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="fathersName">Father&apos;s / Guardian&apos;s Name</Label>
+              <Label htmlFor="fathersName">
+                Father&apos;s / Guardian&apos;s Name <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="fathersName"
                 type="text"
@@ -207,7 +251,9 @@ export default function VerifyPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="dob">Date of Birth</Label>
+              <Label htmlFor="dob">
+                Date of Birth <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="dob"
                 type="date"

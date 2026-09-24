@@ -6,10 +6,10 @@ import { supportTicketTable } from "@/db/schema/support";
 import { eq, and, ilike, sql } from "drizzle-orm";
 import { createSupportTicketSchema, type CreateSupportTicketInput } from "./schema";
 
-export async function verifyCandidateAction(name: string, fathersName: string, dob: string) {
+export async function verifyCandidateAction(name: string, fathersName: string, dob: string, post: string) {
   try {
-    if (!name?.trim() || !fathersName?.trim() || !dob?.trim()) {
-      return { success: false as const, message: "Name, Father's Name, and Date of Birth are required" };
+    if (!name?.trim() || !fathersName?.trim() || !dob?.trim() || !post?.trim()) {
+      return { success: false as const, message: "Name, Father's Name, Date of Birth, and Post are required" };
     }
 
     const candidates = await db
@@ -39,18 +39,41 @@ export async function verifyCandidateAction(name: string, fathersName: string, d
         and(
           ilike(candidateTable.name, name.trim()),
           ilike(candidateTable.fathers_name, fathersName.trim()),
-          eq(candidateTable.dob, dob)
+          eq(candidateTable.dob, dob),
+          ilike(examDetailsTable.post, post.trim())
         )
       );
 
     if (candidates.length === 0) {
-      return { success: false as const, message: "No candidate found with the provided Name, Father's Name, and Date of Birth" };
+      return { success: false as const, message: "No candidate found with the provided details and selected Post" };
     }
 
     return { success: true as const, data: candidates[0] };
   } catch (error) {
     console.error("verifyCandidateAction error", error);
     return { success: false as const, message: "Failed to verify candidate. Please try again." };
+  }
+}
+
+export async function getPostsAction() {
+  try {
+    const exams = await db
+      .select({
+        post: examDetailsTable.post,
+      })
+      .from(examDetailsTable);
+
+    const postsSet = new Set<string>();
+    exams.forEach((e) => {
+      if (e.post?.trim()) {
+        postsSet.add(e.post.trim());
+      }
+    });
+
+    return { success: true as const, data: Array.from(postsSet) };
+  } catch (error) {
+    console.error("getPostsAction error", error);
+    return { success: false as const, message: "Failed to fetch available posts" };
   }
 }
 

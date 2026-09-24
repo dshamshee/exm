@@ -3,7 +3,7 @@ import { verifyCandidateAction } from "@/app/(public)/verify/lib/action";
 
 export function useVerifyCandidateMutation() {
   return useMutation({
-    mutationFn: ({ name, fathersName, dob }: { name: string; fathersName: string; dob: string }) =>
-      verifyCandidateAction(name, fathersName, dob),
+    mutationFn: ({ name, fathersName, dob, post }: { name: string; fathersName: string; dob: string; post: string }) =>
+      verifyCandidateAction(name, fathersName, dob, post),
   });
 }
